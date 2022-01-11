@@ -18,8 +18,8 @@ class ViewController: UIViewController {
     private(set) var emojiChoices = ["🦊", "🐷", "🐭", "🐼", "🐸", "🦁"]
     
     @IBAction private func touchCard(_ sender: UIButton) {
-        flipCount += 1
         if let cardNumber = cardButtons.firstIndex(of: sender) {
+            flipCount += game.isNeedIncreaseFlipCount(at: cardNumber) ? 1 : 0
             game.chooseCard(at: cardNumber)
             updateViewFromModel()
         } else {

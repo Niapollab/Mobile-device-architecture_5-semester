@@ -26,8 +26,15 @@ struct Concentration {
         }
     }
     
+    public func isNeedIncreaseFlipCount(at index: Int) -> Bool {
+        assert(cards.indices.contains(index), "Concentration.choosesCard(at: \(index)): chosen index not in the cards)")
+        
+        return !cards[index].isMatched && !cards[index].isFaceUp;
+    }
+    
     mutating func chooseCard(at index: Int) {
         assert(cards.indices.contains(index), "Concentration.choosesCard(at: \(index)): chosen index not in the cards)")
+        
         if !cards[index].isMatched {
             if let matchIndex = indexOfOneAndOnlyFaceUpCard, matchIndex != index {
                 if cards[matchIndex] == cards[index] {
