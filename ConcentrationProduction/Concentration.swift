@@ -2,6 +2,11 @@ import Foundation
 
 struct Concentration {
     private(set) var cards = [Card]()
+    private(set) var isTipUsed = false
+    
+    mutating func useTip() {
+        isTipUsed = true
+    }
     
     private var indexOfOneAndOnlyFaceUpCard: Int? {
         get {
@@ -17,8 +22,12 @@ struct Concentration {
     
     public func isNeedIncreaseFlipCount(at index: Int) -> Bool {
         assert(cards.indices.contains(index), "Concentration.choosesCard(at: \(index)): chosen index not in the cards)")
-        
+
         return !cards[index].isMatched && !cards[index].isFaceUp;
+    }
+    
+    mutating func shuffleCards() {
+        cards.shuffle()
     }
     
     mutating func chooseCard(at index: Int) {
@@ -39,6 +48,7 @@ struct Concentration {
     
     init(numberOfPairsOfCards: Int) {
         assert(numberOfPairsOfCards > 0, "Concentration.init(\(numberOfPairsOfCards)): you must have at least one pair of cards")
+        Card.resetIdentifierFactory()
         for _ in 1...numberOfPairsOfCards {
             let card = Card()
             cards += [card, card]

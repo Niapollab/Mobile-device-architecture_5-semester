@@ -20,6 +20,10 @@ struct Card : Hashable {
         return identifierFactory
     }
     
+    static func resetIdentifierFactory() {
+        identifierFactory = 0;
+    }
+    
     init() {
         self.identifier = Card.getUniqueIdentifier()
     }

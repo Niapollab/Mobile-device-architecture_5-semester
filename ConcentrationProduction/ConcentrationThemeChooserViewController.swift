@@ -31,13 +31,13 @@ class ConcentrationThemeChooserViewController: UIViewController, UISplitViewCont
     
     @IBAction func changeTheme(_ sender: Any) {
         if let cvc = splitViewDetailConcentrationViewController {
-            if let themeName = (sender as? UIButton)?.currentTitle,
-                let theme = themes[themeName] {
+            if let themeName = (sender as? UIButton)?.currentTitle {
+                let theme = themeName == "Random" ? themes[themes.keys.randomElement()!]! : themes[themeName]!
                 cvc.theme = theme
             }
         } else if let cvc = lastSeguedToConcentrationViewController {
-            if let themeName = (sender as? UIButton)?.currentTitle,
-                let theme = themes[themeName] {
+            if let themeName = (sender as? UIButton)?.currentTitle {
+                let theme = themeName == "Random" ? themes[themes.keys.randomElement()!]! : themes[themeName]!
                 cvc.theme = theme
             }
             navigationController?.pushViewController(cvc, animated: true)
@@ -49,8 +49,9 @@ class ConcentrationThemeChooserViewController: UIViewController, UISplitViewCont
     
     override func prepare(for segue: UIStoryboardSegue, sender: Any?) {
         if segue.identifier == "Choose Theme" {
-            if let themeName = (sender as? UIButton)?.currentTitle,
-               let theme = themes[themeName] {
+            if let themeName = (sender as? UIButton)?.currentTitle {
+                let theme = themeName == "Random" ? themes[themes.keys.randomElement()!]! : themes[themeName]!
+                print(theme)
                 if let cvc = segue.destination as? ConcentrationViewController {
                     cvc.theme = theme
                     lastSeguedToConcentrationViewController = cvc

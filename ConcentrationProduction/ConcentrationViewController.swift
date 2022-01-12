@@ -12,9 +12,10 @@ class ConcentrationViewController: UIViewController {
     private lazy var game = Concentration(numberOfPairsOfCards: numberOfPairsOfCards)
     
     var emoji = [Card: String]()
+    var cardInputBlock = false
     
     var numberOfPairsOfCards: Int {
-            return (cardButtons.count + 1) / 2
+        return (cardButtons.count + 1) / 2
     }
     
     private(set) var flipCount = 0 {
@@ -40,11 +41,37 @@ class ConcentrationViewController: UIViewController {
         }
     }
     
+    @IBOutlet weak var useTipButton: UIButton!
     private(set) var emojiChoices = "🐶🐱🐭🐹🐰🦊🐻🐼🐨🐯"
     
+    @IBAction func useTip(_ sender: UIButton) {
+        if !game.isTipUsed {
+            game.useTip()
+            updateViewWithNoMatchedCardsFacedUp()
+            cardInputBlock = true
+            Timer.scheduledTimer(withTimeInterval: 1, repeats: false) {timer in
+                self.updateViewFromModel()
+                self.cardInputBlock = false
+                timer.invalidate()
+            }
+        }
+    }
+    
+    @IBAction func restartGame(_ sender: UIButton) {
+        game = Concentration(numberOfPairsOfCards: numberOfPairsOfCards)
+        updateViewFromModel()
+        flipCount = 0
+    }
+    
+    
+    @IBAction func shuffleCards(_ sender: UIButton) {
+        game.shuffleCards()
+        updateViewFromModel()
+    }
+    
     @IBAction private func touchCard(_ sender: UIButton) {
-        flipCount += 1
-        if let cardNumber = cardButtons.firstIndex(of: sender) {
+        if !cardInputBlock, let cardNumber = cardButtons.firstIndex(of: sender) {
+            flipCount += game.isNeedIncreaseFlipCount(at: cardNumber) ? 1 : 0
             game.chooseCard(at: cardNumber)
             updateViewFromModel()
         } else {
@@ -53,6 +80,25 @@ class ConcentrationViewController: UIViewController {
     }
     
     @IBOutlet private var cardButtons: [UIButton]!
+    
+    private func updateViewWithNoMatchedCardsFacedUp() {
+        if cardButtons != nil {
+            for index in cardButtons.indices {
+                let button = cardButtons[index]
+                let card = game.cards[index]
+                if !card.isMatched {
+                    button.setTitle(emoji(for: card), for: UIControl.State.normal)
+                    button.backgroundColor = #colorLiteral(red: 0.8039215803, green: 0.8039215803, blue: 0.8039215803, alpha: 1)
+                }
+            }
+            
+            if !game.isTipUsed {
+                useTipButton.tintColor = #colorLiteral(red: 0, green: 0.4784313725, blue: 1, alpha: 1)
+            } else {
+                useTipButton.tintColor = #colorLiteral(red: 0.8039215803, green: 0.8039215803, blue: 0.8039215803, alpha: 1)
+            }
+        }
+    }
     
     private func updateViewFromModel() {
         if cardButtons != nil {
@@ -66,6 +112,12 @@ class ConcentrationViewController: UIViewController {
                     button.setTitle("", for: UIControl.State.normal)
                     button.backgroundColor = card.isMatched ? #colorLiteral(red: 1, green: 1, blue: 1, alpha: 0) : #colorLiteral(red: 0, green: 0.4784313725, blue: 1, alpha: 1)
                 }
+            }
+            
+            if !game.isTipUsed {
+                useTipButton.tintColor = #colorLiteral(red: 0, green: 0.4784313725, blue: 1, alpha: 1)
+            } else {
+                useTipButton.tintColor = #colorLiteral(red: 0.8039215803, green: 0.8039215803, blue: 0.8039215803, alpha: 1)
             }
         }
     }
