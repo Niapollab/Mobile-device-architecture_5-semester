@@ -10,6 +10,8 @@ import UIKit
 
 class ConcentrationViewController: UIViewController {
     private lazy var game = Concentration(numberOfPairsOfCards: numberOfPairsOfCards)
+
+    private var pointsManager = PointsManager(canBeLessZero: true)
     
     var emoji = [Card: String]()
     
@@ -21,6 +23,15 @@ class ConcentrationViewController: UIViewController {
         didSet {
             updateFlipCountLabel()
         }
+    }
+
+    private func updatePointsCountLabel() {
+        let attributes: [NSAttributedString.Key: Any] = [
+            .strokeWidth: 5.0,
+            .strokeColor: #colorLiteral(red: 0.06274510175, green: 0, blue: 0.1921568662, alpha: 1)
+        ]
+        let attributedString = NSAttributedString(string: "Points: \(pointsManager.points)", attributes: attributes)
+        flipCountLabel.attributedText = attributedString
     }
     
     private func updateFlipCountLabel() {
@@ -43,8 +54,19 @@ class ConcentrationViewController: UIViewController {
     private(set) var emojiChoices = "🐶🐱🐭🐹🐰🦊🐻🐼🐨🐯"
     
     @IBAction private func touchCard(_ sender: UIButton) {
-        flipCount += 1
         if let cardNumber = cardButtons.firstIndex(of: sender) {
+            if game.isNeedIncreaseFlipCount(at: cardNumber) {
+                switch game.getPairCardStatus(at: cardNumber) {
+                    case .equalsCards:
+                        pointsManager.add()
+                        updatePointsCountLabel()
+                    case .notEqualsCards:
+                        pointsManager.remove()
+                        updatePointsCountLabel()
+                    default:
+                        ()
+                }
+            }
             game.chooseCard(at: cardNumber)
             updateViewFromModel()
         } else {

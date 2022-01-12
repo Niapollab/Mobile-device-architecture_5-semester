@@ -1,5 +1,11 @@
 import Foundation
 
+enum PairCardsStates {
+    case openedFirst
+    case equalsCards
+    case notEqualsCards
+}
+
 struct Concentration {
     private(set) var cards = [Card]()
     
@@ -15,10 +21,27 @@ struct Concentration {
         }
     }
     
-    public func isNeedIncreaseFlipCount(at index: Int) -> Bool {
+    func isNeedIncreaseFlipCount(at index: Int) -> Bool {
         assert(cards.indices.contains(index), "Concentration.choosesCard(at: \(index)): chosen index not in the cards)")
         
         return !cards[index].isMatched && !cards[index].isFaceUp;
+    }
+
+    func getPairCardStatus(at index: Int)-> PairCardsStates {
+        assert(cards.indices.contains(index), "Concentration.choosesCard(at: \(index)): chosen index not in the cards)")
+        
+        if !cards[index].isMatched {
+            if let matchIndex = indexOfOneAndOnlyFaceUpCard, matchIndex != index {
+                if cards[matchIndex] == cards[index] {
+                    return .equalsCards
+                }
+                else {
+                    return .notEqualsCards
+                }
+            }
+        }
+
+        return .openedFirst
     }
     
     mutating func chooseCard(at index: Int) {
