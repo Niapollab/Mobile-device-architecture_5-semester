@@ -31,7 +31,7 @@ struct Concentration {
 
         return !cards[index].isMatched && !cards[index].isFaceUp;
     }
-
+    
     func getPairCardStatus(at index: Int)-> PairCardsStates {
         assert(cards.indices.contains(index), "Concentration.choosesCard(at: \(index)): chosen index not in the cards)")
         

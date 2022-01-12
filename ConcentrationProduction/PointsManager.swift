@@ -19,10 +19,6 @@ struct PointsManager {
         }
     }
 
-    mutating func reset() {
-        internalPoints = 0
-    }
-
     init(canBeLessZero: Bool) {
         internalPoints = 0
         self.canBeLessZero = canBeLessZero

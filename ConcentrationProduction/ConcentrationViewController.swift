@@ -1,39 +1,38 @@
+//
+//  ViewController.swift
+//  ConcentrationProduction
+//
+//  Created by Oleg E on 1/10/22.
+//  Copyright © 2022 Oleg E. All rights reserved.
+//
+
 import UIKit
 
 class ConcentrationViewController: UIViewController {
     private lazy var game = Concentration(numberOfPairsOfCards: numberOfPairsOfCards)
-
+    
     private var pointsManager = PointsManager(canBeLessZero: true)
     
-    var emoji = [Card: String]()
-    var cardInputBlock = false
+    override func viewDidLoad() {
+        rebuildView()
+        updateViewFromModel()
+    }
     
+    var emoji = [Card: String]()
+    private var cardInputBlock = false
+    
+    @IBOutlet private weak var cardsStack: UIStackView!
     var numberOfPairsOfCards: Int {
         return (cardButtons.count + 1) / 2
     }
     
-    private(set) var flipCount = 0 {
-        didSet {
-            updateFlipCountLabel()
-        }
-    }
-
     private func updatePointsCountLabel() {
         let attributes: [NSAttributedString.Key: Any] = [
             .strokeWidth: 5.0,
             .strokeColor: #colorLiteral(red: 0.06274510175, green: 0, blue: 0.1921568662, alpha: 1)
         ]
         let attributedString = NSAttributedString(string: "Points: \(pointsManager.points)", attributes: attributes)
-        flipCountLabel.attributedText = attributedString
-    }
-    
-    private func updateFlipCountLabel() {
-        let attributes: [NSAttributedString.Key: Any] = [
-            .strokeWidth: 5.0,
-            .strokeColor: #colorLiteral(red: 0.06274510175, green: 0, blue: 0.1921568662, alpha: 1)
-        ]
-        let attributedString = NSAttributedString(string: "Flips: \(flipCount)", attributes: attributes)
-        flipCountLabel.attributedText = attributedString
+        scoreCountLabel.attributedText = attributedString
     }
     
     var theme: String? {
@@ -44,8 +43,91 @@ class ConcentrationViewController: UIViewController {
         }
     }
     
-    @IBOutlet weak var useTipButton: UIButton!
-    private(set) var emojiChoices = "🐶🐱🐭🐹🐰🦊🐻🐼🐨🐯"
+    private var totalEmojis = 12
+    
+    var difficulty: String? {
+        didSet {
+            switch difficulty {
+            case "Easy":
+                totalEmojis = 8
+            case "Medium":
+                totalEmojis = 12
+            case "Hard":
+                totalEmojis = 24
+            default:
+                totalEmojis = 12
+                print("Unknown difficulty, totalEmojis was set to 12")
+            }
+            print(totalEmojis)
+            rebuildGameWithNewDifficulty()
+        }
+    }
+    
+    private func rebuildView() {
+        cardButtons.removeAll()
+        
+        var rows: Int
+        if difficulty == "Easy" {
+            rows = 2
+        } else {
+            //UIApplication.shared.windows.first?.windowScene?.interfaceOrientation.isLandscape ?? false
+            //UIApplication.shared.statusBarOrientation.isLandscape
+            if UIDevice.current.orientation.isValidInterfaceOrientation ? UIDevice.current.orientation.isLandscape :
+                UIApplication.shared.windows.first?.windowScene?.interfaceOrientation.isLandscape ?? false {
+                print("on rebuild state: landscape")
+                rows = Int(totalEmojis / 6)
+            } else {
+                print("on rebuildstate: portrait")
+                rows = Int(totalEmojis / 4)
+            }
+        }
+        let cols = Int(totalEmojis / rows)
+        print("New config: cols: \(cols), rows: \(rows)")
+        cardsStack.arrangedSubviews.forEach {view in
+            cardsStack.removeArrangedSubview(view)
+            view.removeFromSuperview()
+        }
+        
+        var fontSize: CGFloat
+        if (UIDevice.current.userInterfaceIdiom == .pad) {
+            fontSize = 50
+        } else {
+            switch difficulty {
+            case "Easy":
+                fontSize = 48
+            case "Medium":
+                fontSize = 40
+            default:
+                fontSize = 30
+            }
+        }
+        
+        for _ in 1...rows {
+            let newStack = UIStackView()
+            newStack.distribution = UIStackView.Distribution.fillEqually
+            newStack.spacing = 5
+            for _ in 1...cols {
+                let button = UIButton()
+                button.addTarget(self, action: #selector(touchCard), for: .touchUpInside)
+                
+                button.titleLabel?.font = .systemFont(ofSize: fontSize)
+                cardButtons.append(button)
+                newStack.addArrangedSubview(button)
+            }
+            cardsStack.addArrangedSubview(newStack)
+        }
+    }
+    
+    private func rebuildGameWithNewDifficulty() {
+        if cardButtons != nil {
+            rebuildView()
+            restartGame()
+            updateViewFromModel()
+        }
+    }
+    
+    @IBOutlet private weak var useTipButton: UIButton!
+    private(set) var emojiChoices = "🐶🐱🐭🐹🐰🦊🐻🐼🐨🐯🐥🐴"
     
     @IBAction func useTip(_ sender: UIButton) {
         if !game.isTipUsed {
@@ -60,23 +142,25 @@ class ConcentrationViewController: UIViewController {
         }
     }
     
-    @IBAction func restartGame(_ sender: UIButton) {
+    private func restartGame () {
         game = Concentration(numberOfPairsOfCards: numberOfPairsOfCards)
-        pointsManager.reset()
         updateViewFromModel()
-        flipCount = 0
+        pointsManager = PointsManager(canBeLessZero: true)
+        updatePointsCountLabel()
+    }
+    
+    @IBAction private func touchRestart(_ sender: UIButton) {
+        restartGame()
     }
     
     
-    @IBAction func shuffleCards(_ sender: UIButton) {
+    @IBAction private func shuffleCards(_ sender: UIButton) {
         game.shuffleCards()
         updateViewFromModel()
     }
     
     @IBAction private func touchCard(_ sender: UIButton) {
         if !cardInputBlock, let cardNumber = cardButtons.firstIndex(of: sender) {
-            // TODO: Restore flipCount
-            // flipCount += game.isNeedIncreaseFlipCount(at: cardNumber) ? 1 : 0
             if game.isNeedIncreaseFlipCount(at: cardNumber) {
                 switch game.getPairCardStatus(at: cardNumber) {
                     case .equalsCards:
@@ -85,8 +169,7 @@ class ConcentrationViewController: UIViewController {
                     case .notEqualsCards:
                         pointsManager.remove()
                         updatePointsCountLabel()
-                    default:
-                        ()
+                    default: ()
                 }
             }
             game.chooseCard(at: cardNumber)
@@ -99,6 +182,7 @@ class ConcentrationViewController: UIViewController {
     @IBOutlet private var cardButtons: [UIButton]!
     
     private func updateViewWithNoMatchedCardsFacedUp() {
+    
         if cardButtons != nil {
             for index in cardButtons.indices {
                 let button = cardButtons[index]
@@ -148,9 +232,16 @@ class ConcentrationViewController: UIViewController {
         return emoji[card] ?? "?"
     }
     
-    @IBOutlet private weak var flipCountLabel: UILabel! {
+    @IBOutlet private weak var scoreCountLabel: UILabel! {
         didSet {
-            updateFlipCountLabel()
+            updatePointsCountLabel()
+        }
+    }
+    
+    override func viewWillTransition(to size: CGSize, with coordinator: UIViewControllerTransitionCoordinator) {
+        if cardButtons != nil {
+            rebuildView()
+            updateViewFromModel()
         }
     }
 }
