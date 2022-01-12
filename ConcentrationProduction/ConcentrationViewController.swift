@@ -1,15 +1,9 @@
-//
-//  ViewController.swift
-//  ConcentrationProduction
-//
-//  Created by Oleg E on 1/10/22.
-//  Copyright © 2022 Oleg E. All rights reserved.
-//
-
 import UIKit
 
 class ConcentrationViewController: UIViewController {
     private lazy var game = Concentration(numberOfPairsOfCards: numberOfPairsOfCards)
+
+    private var pointsManager = PointsManager(canBeLessZero: true)
     
     var emoji = [Card: String]()
     var cardInputBlock = false
@@ -22,6 +16,15 @@ class ConcentrationViewController: UIViewController {
         didSet {
             updateFlipCountLabel()
         }
+    }
+
+    private func updatePointsCountLabel() {
+        let attributes: [NSAttributedString.Key: Any] = [
+            .strokeWidth: 5.0,
+            .strokeColor: #colorLiteral(red: 0.06274510175, green: 0, blue: 0.1921568662, alpha: 1)
+        ]
+        let attributedString = NSAttributedString(string: "Points: \(pointsManager.points)", attributes: attributes)
+        flipCountLabel.attributedText = attributedString
     }
     
     private func updateFlipCountLabel() {
@@ -59,6 +62,7 @@ class ConcentrationViewController: UIViewController {
     
     @IBAction func restartGame(_ sender: UIButton) {
         game = Concentration(numberOfPairsOfCards: numberOfPairsOfCards)
+        pointsManager.reset()
         updateViewFromModel()
         flipCount = 0
     }
@@ -71,7 +75,20 @@ class ConcentrationViewController: UIViewController {
     
     @IBAction private func touchCard(_ sender: UIButton) {
         if !cardInputBlock, let cardNumber = cardButtons.firstIndex(of: sender) {
-            flipCount += game.isNeedIncreaseFlipCount(at: cardNumber) ? 1 : 0
+            // TODO: Restore flipCount
+            // flipCount += game.isNeedIncreaseFlipCount(at: cardNumber) ? 1 : 0
+            if game.isNeedIncreaseFlipCount(at: cardNumber) {
+                switch game.getPairCardStatus(at: cardNumber) {
+                    case .equalsCards:
+                        pointsManager.add()
+                        updatePointsCountLabel()
+                    case .notEqualsCards:
+                        pointsManager.remove()
+                        updatePointsCountLabel()
+                    default:
+                        ()
+                }
+            }
             game.chooseCard(at: cardNumber)
             updateViewFromModel()
         } else {
