@@ -1,11 +1,3 @@
-//
-//  ViewController.swift
-//  ConcentrationProduction
-//
-//  Created by Oleg E on 1/10/22.
-//  Copyright © 2022 Oleg E. All rights reserved.
-//
-
 import UIKit
 
 class ConcentrationViewController: UIViewController {
@@ -45,14 +37,14 @@ class ConcentrationViewController: UIViewController {
     
     private var totalEmojis = 12
     
-    var difficulty: String? {
+    var difficulty: Difficulty? {
         didSet {
             switch difficulty {
-            case "Easy":
+            case .easy:
                 totalEmojis = 8
-            case "Medium":
+            case .medium:
                 totalEmojis = 12
-            case "Hard":
+            case .hard:
                 totalEmojis = 24
             default:
                 totalEmojis = 12
@@ -62,18 +54,37 @@ class ConcentrationViewController: UIViewController {
             rebuildGameWithNewDifficulty()
         }
     }
+
+    private func removeAllButtonsFromView() {
+        cardButtons.removeAll()
+
+        cardsStack.arrangedSubviews.forEach { view in
+            cardsStack.removeArrangedSubview(view)
+            view.removeFromSuperview()
+        }
+    }
+
+    private func calculateFloatFountSize() -> CGFloat {
+        if (UIDevice.current.userInterfaceIdiom == .pad) {
+            return 50
+        } else {
+            switch difficulty {
+            case .easy:
+                return 48
+            case .medium:
+                return 40
+            default:
+                return 30
+            }
+        }
+    }
     
     private func rebuildView() {
-        cardButtons.removeAll()
-        
         var rows: Int
-        if difficulty == "Easy" {
+        if difficulty == .easy {
             rows = 2
         } else {
-            //UIApplication.shared.windows.first?.windowScene?.interfaceOrientation.isLandscape ?? false
-            //UIApplication.shared.statusBarOrientation.isLandscape
-            if UIDevice.current.orientation.isValidInterfaceOrientation ? UIDevice.current.orientation.isLandscape :
-                UIApplication.shared.windows.first?.windowScene?.interfaceOrientation.isLandscape ?? false {
+            if UIDevice.isLandscape {
                 print("on rebuild state: landscape")
                 rows = Int(totalEmojis / 6)
             } else {
@@ -83,24 +94,9 @@ class ConcentrationViewController: UIViewController {
         }
         let cols = Int(totalEmojis / rows)
         print("New config: cols: \(cols), rows: \(rows)")
-        cardsStack.arrangedSubviews.forEach {view in
-            cardsStack.removeArrangedSubview(view)
-            view.removeFromSuperview()
-        }
-        
-        var fontSize: CGFloat
-        if (UIDevice.current.userInterfaceIdiom == .pad) {
-            fontSize = 50
-        } else {
-            switch difficulty {
-            case "Easy":
-                fontSize = 48
-            case "Medium":
-                fontSize = 40
-            default:
-                fontSize = 30
-            }
-        }
+
+        removeAllButtonsFromView()
+        let fontSize: CGFloat = calculateFloatFountSize()
         
         for _ in 1...rows {
             let newStack = UIStackView()
@@ -134,7 +130,7 @@ class ConcentrationViewController: UIViewController {
             game.useTip()
             updateViewWithNoMatchedCardsFacedUp()
             cardInputBlock = true
-            Timer.scheduledTimer(withTimeInterval: 1, repeats: false) {timer in
+            Timer.scheduledTimer(withTimeInterval: 1, repeats: false) { timer in
                 self.updateViewFromModel()
                 self.cardInputBlock = false
                 timer.invalidate()
@@ -161,16 +157,14 @@ class ConcentrationViewController: UIViewController {
     
     @IBAction private func touchCard(_ sender: UIButton) {
         if !cardInputBlock, let cardNumber = cardButtons.firstIndex(of: sender) {
-            if game.isNeedIncreaseFlipCount(at: cardNumber) {
-                switch game.getPairCardStatus(at: cardNumber) {
-                    case .equalsCards:
-                        pointsManager.add()
-                        updatePointsCountLabel()
-                    case .notEqualsCards:
-                        pointsManager.remove()
-                        updatePointsCountLabel()
-                    default: ()
-                }
+            switch game.getPairCardStatus(at: cardNumber) {
+                case .equalsCards:
+                    pointsManager.add()
+                    updatePointsCountLabel()
+                case .notEqualsCards:
+                    pointsManager.remove()
+                    updatePointsCountLabel()
+                default: ()
             }
             game.chooseCard(at: cardNumber)
             updateViewFromModel()
@@ -182,13 +176,12 @@ class ConcentrationViewController: UIViewController {
     @IBOutlet private var cardButtons: [UIButton]!
     
     private func updateViewWithNoMatchedCardsFacedUp() {
-    
         if cardButtons != nil {
             for index in cardButtons.indices {
                 let button = cardButtons[index]
                 let card = game.cards[index]
                 if !card.isMatched {
-                    button.setTitle(emoji(for: card), for: UIControl.State.normal)
+                    button.setTitle(getEmojiByCard(for: card), for: UIControl.State.normal)
                     button.backgroundColor = #colorLiteral(red: 0.8039215803, green: 0.8039215803, blue: 0.8039215803, alpha: 1)
                 }
             }
@@ -207,7 +200,7 @@ class ConcentrationViewController: UIViewController {
                 let button = cardButtons[index]
                 let card = game.cards[index]
                 if card.isFaceUp {
-                    button.setTitle(emoji(for: card), for: UIControl.State.normal)
+                    button.setTitle(getEmojiByCard(for: card), for: UIControl.State.normal)
                     button.backgroundColor = #colorLiteral(red: 0.8039215803, green: 0.8039215803, blue: 0.8039215803, alpha: 1)
                 } else {
                     button.setTitle("", for: UIControl.State.normal)
@@ -223,13 +216,15 @@ class ConcentrationViewController: UIViewController {
         }
     }
     
-    func emoji(for card: Card) -> String {
+    func getEmojiByCard(for card: Card) -> String {
+        let undefinedEmoji = "?"
+        
         if emoji[card] == nil, emojiChoices.count > 0 {
             let randomStringIndex = emojiChoices.index(emojiChoices.startIndex, offsetBy: emojiChoices.count.arc4random)
             emoji[card] = String(emojiChoices.remove(at: randomStringIndex))
         }
         
-        return emoji[card] ?? "?"
+        return emoji[card] ?? undefinedEmoji
     }
     
     @IBOutlet private weak var scoreCountLabel: UILabel! {
@@ -243,6 +238,14 @@ class ConcentrationViewController: UIViewController {
             rebuildView()
             updateViewFromModel()
         }
+    }
+}
+
+extension UIDevice {
+    static var isLandscape: Bool {
+        return UIDevice.current.orientation.isValidInterfaceOrientation
+            ? UIDevice.current.orientation.isLandscape
+            : (UIApplication.shared.windows.first?.windowScene?.interfaceOrientation.isLandscape ?? false)
     }
 }
 

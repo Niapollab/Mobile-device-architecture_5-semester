@@ -26,12 +26,6 @@ struct Concentration {
         }
     }
     
-    func isNeedIncreaseFlipCount(at index: Int) -> Bool {
-        assert(cards.indices.contains(index), "Concentration.choosesCard(at: \(index)): chosen index not in the cards)")
-
-        return !cards[index].isMatched && !cards[index].isFaceUp;
-    }
-    
     func getPairCardStatus(at index: Int)-> PairCardsStates {
         assert(cards.indices.contains(index), "Concentration.choosesCard(at: \(index)): chosen index not in the cards)")
         
@@ -71,6 +65,7 @@ struct Concentration {
     
     init(numberOfPairsOfCards: Int) {
         assert(numberOfPairsOfCards > 0, "Concentration.init(\(numberOfPairsOfCards)): you must have at least one pair of cards")
+        
         Card.resetIdentifierFactory()
         for _ in 1...numberOfPairsOfCards {
             let card = Card()

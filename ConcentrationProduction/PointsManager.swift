@@ -1,26 +1,22 @@
 import Foundation
 
 struct PointsManager {
-    private var internalPoints: Int
-
     private var canBeLessZero: Bool
 
-    var points: Int {
-        return internalPoints
-    }
+    private(set) var points: Int = 0
 
     mutating func add() {
-        internalPoints += 1
+        points += 1
     }
 
     mutating func remove() {
-        if internalPoints >= 2 || canBeLessZero {
-            internalPoints -= 2
+        if points >= 2 || canBeLessZero {
+            points -= 2
         }
     }
 
     init(canBeLessZero: Bool) {
-        internalPoints = 0
+        points = 0
         self.canBeLessZero = canBeLessZero
     }
 }
