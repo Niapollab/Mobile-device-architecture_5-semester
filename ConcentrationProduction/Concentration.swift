@@ -7,6 +7,7 @@ enum PairCardsStates {
 }
 
 struct Concentration {
+    private var cardsFactory: CardsFactoryProtocol = CardsFactory()
     private(set) var cards = [Card]()
     private(set) var isTipUsed = false
     
@@ -65,13 +66,8 @@ struct Concentration {
     
     init(numberOfPairsOfCards: Int) {
         assert(numberOfPairsOfCards > 0, "Concentration.init(\(numberOfPairsOfCards)): you must have at least one pair of cards")
-        
-        Card.resetIdentifierFactory()
-        for _ in 1...numberOfPairsOfCards {
-            let card = Card()
-            cards += [card, card]
-        }
-        
+
+        cards = cardsFactory.build(numberOfPairsOfCards: numberOfPairsOfCards)
         cards.shuffle()
     }
 }
